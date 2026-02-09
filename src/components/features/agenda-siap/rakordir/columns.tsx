@@ -157,8 +157,7 @@ export const columns: ColumnDef<AgendaRadirItem>[] = [
         header: "JUDUL AGENDA",
         cell: ({ row }) => {
             const title = row.getValue("title") as string;
-            const original = row.original as any;
-            const dateStr = original.deadlineDate || original.deadline_date || null;
+            const dateStr = row.original.deadlineDate || null;
             return (
                 <div className="flex flex-col gap-1 w-[320px]">
                     <span className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 wrap-break-word" title={title}>

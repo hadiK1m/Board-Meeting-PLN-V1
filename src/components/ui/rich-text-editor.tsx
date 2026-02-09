@@ -5,9 +5,6 @@ import dynamic from "next/dynamic";
 import { useMemo, useRef, useEffect, useCallback } from "react";
 import type ReactQuillNS from "react-quill-new";
 import type Quill from "quill";
-// @ts-expect-error - CSS module doesn't have type declarations
-import "react-quill-new/dist/quill.snow.css";
-
 // Flag to track if custom blot has been registered
 let blotRegistered = false;
 

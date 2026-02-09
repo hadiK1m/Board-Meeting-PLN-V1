@@ -312,9 +312,9 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
         }
     };
 
-    // Count attendance (hadir or kuasa counts as present)
+    // Count attendance (hadir counts as present)
     const attendanceCount = Object.values(attendanceData).filter(
-        (att) => att.status === "hadir" || att.status === "kuasa"
+        (att) => att.status === "hadir"
     ).length;
 
     return (
@@ -354,7 +354,7 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
                             guestParticipants,
                             notulensiTtd,
                         }}
-                        onAgendaAdded={(newAgendaIds) => {
+                        onAgendaAdded={() => {
                             // Refresh page to get updated data
                             router.refresh();
                         }}
@@ -453,7 +453,7 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
                                 selectedAgendaId={selectedAgendaId}
                                 notulensiTtd={notulensiTtd}
                                 onNotulensiTtdChange={setNotulensiTtd}
-                                notulensiNumber={initialData.notulensiNumber}
+                                notulensiNumber={initialData.notulensiNumber ?? undefined}
                             />
                         </TabsContent>
                     </Tabs>

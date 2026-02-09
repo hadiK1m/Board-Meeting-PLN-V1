@@ -181,7 +181,7 @@ export async function getRisalahDetail(meetingNumber: string) {
         const perAgendaContent: Record<string, {
             executiveSummary: string;
             considerations: string;
-            meetingDecisions: { decision: string; output: string; progressTerkini: string; evidence: string }[];
+            meetingDecisions: { decision: string; output: string; progressTerkini: string; status: string; evidence: string }[];
             dissentingOpinion: string;
         }> = {};
 
@@ -189,7 +189,7 @@ export async function getRisalahDetail(meetingNumber: string) {
             perAgendaContent[r.id] = {
                 executiveSummary: r.executiveSummary || "",
                 considerations: r.considerations || "",
-                meetingDecisions: (r.meetingDecisions as { decision: string; output: string; progressTerkini: string; evidence: string }[]) || [],
+                meetingDecisions: (r.meetingDecisions as { decision: string; output: string; progressTerkini: string; status: string; evidence: string }[]) || [],
                 dissentingOpinion: r.dissentingOpinion || "",
             };
         });

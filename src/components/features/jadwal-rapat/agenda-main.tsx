@@ -77,7 +77,7 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
             // Cari teks dalam kurung di akhir string
             // Ambil teks dalam kurung jika ada (misal: "JABATAN (SINGKATAN)" -> "SINGKATAN")
             const match = trimmed.match(/\(([^)]+)\)$/);
-            return match ? match[1].trim() : trimmed;
+            return match && match[1] ? match[1].trim() : trimmed;
         }).join(', ');
     };
 

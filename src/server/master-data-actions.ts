@@ -104,6 +104,9 @@ export async function createOrganizationalUnit(data: {
             })
             .returning();
 
+        if (!result) {
+            throw new Error("Insert failed - no result returned");
+        }
         return result;
     } catch (error) {
         console.error("❌ Gagal membuat organizational unit:", error);
@@ -128,6 +131,9 @@ export async function updateOrganizationalUnit(
             .where(eq(organizationalUnits.id, id))
             .returning();
 
+        if (!result) {
+            throw new Error("Update failed - no result returned");
+        }
         return result;
     } catch (error) {
         console.error("❌ Gagal memperbarui organizational unit:", error);
