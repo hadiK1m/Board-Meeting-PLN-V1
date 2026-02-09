@@ -1,5 +1,5 @@
 {
-  "id": "a52e777d-0d58-4476-ae34-ec14a7bca411",
+  "id": "0f681257-0edc-4ddf-9196-994da46def05",
   "prevId": "49fdba2f-2a73-480a-8250-fd0caf633f47",
   "version": "7",
   "dialect": "postgresql",
@@ -489,9 +489,10 @@
         },
         "arahan_direksi": {
           "name": "arahan_direksi",
-          "type": "text",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'[]'::jsonb"
         },
         "catatan_rapat": {
           "name": "catatan_rapat",

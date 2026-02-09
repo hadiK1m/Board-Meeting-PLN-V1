@@ -5,7 +5,7 @@ import {
     Gavel,
     Activity,
     Settings2,
-    LifeBuoy,
+    Users,
     type LucideIcon,
 } from "lucide-react";
 
@@ -86,9 +86,9 @@ export const sidebarData = {
             icon: Settings2,
         },
         {
-            name: "Bantuan",
-            url: "/dashboard/help",
-            icon: LifeBuoy,
+            name: "User Management",
+            url: "/dashboard/users",
+            icon: Users,
         },
     ],
 };
