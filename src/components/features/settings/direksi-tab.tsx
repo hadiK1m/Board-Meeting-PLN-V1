@@ -41,17 +41,17 @@ import { Plus, MoreHorizontal, Pencil, Trash2, GripVertical, Users } from "lucid
 
 // Data sementara - nanti akan diambil dari database
 const initialDireksi = [
-    { id: 1, name: "Direktur Utama", code: "DIRUT", order: 1, isActive: true },
-    { id: 2, name: "Wakil Direktur Utama", code: "WADIR", order: 2, isActive: true },
-    { id: 3, name: "Direktur Keuangan", code: "DIRKEU", order: 3, isActive: true },
-    { id: 4, name: "Direktur SDM", code: "DIRSDM", order: 4, isActive: true },
-    { id: 5, name: "Direktur Operasi I", code: "DIROPS1", order: 5, isActive: true },
-    { id: 6, name: "Direktur Operasi II", code: "DIROPS2", order: 6, isActive: true },
-    { id: 7, name: "Direktur Operasi III", code: "DIROPS3", order: 7, isActive: true },
-    { id: 8, name: "Direktur Pengadaan & Rantai Pasok", code: "DIRPRP", order: 8, isActive: true },
-    { id: 9, name: "Direktur Perencanaan Korporat", code: "DIRPK", order: 9, isActive: true },
-    { id: 10, name: "Direktur Manajemen Risiko", code: "DIRMR", order: 10, isActive: true },
-    { id: 11, name: "Direktur Mega Proyek dan EBT", code: "DIRMPE", order: 11, isActive: true },
+    { id: 1, name: "DIREKTUR UTAMA (DIRUT)", code: "DIRUT", order: 1, isActive: true },
+    { id: 2, name: "DIREKTUR LEGAL DAN MANAJEMEN HUMAN CAPITAL (DIR LHC)", code: "DIR LHC", order: 2, isActive: true },
+    { id: 3, name: "DIREKTUR KEUANGAN (DIR KEU)", code: "DIR KEU", order: 3, isActive: true },
+    { id: 4, name: "DIREKTUR DISTRIBUSI (DIR DIST)", code: "DIR DIST", order: 4, isActive: true },
+    { id: 5, name: "DIREKTUR RETAIL DAN NIAGA (DIR RETAIL)", code: "DIR RETAIL", order: 5, isActive: true },
+    { id: 6, name: "DIREKTUR MANAJEMEN PROYEK DAN ENERGI BARU TERBARUKAN (DIR EBT)", code: "DIR EBT", order: 6, isActive: true },
+    { id: 7, name: "DIREKTUR PERENCANAAN KORPORAT DAN PENGEMBANGAN BISNIS (DIR RENBANG)", code: "DIR RENBANG", order: 7, isActive: true },
+    { id: 8, name: "DIREKTUR TRANSMISI DAN PERENCANAAN SISTEM (DIR TRANS)", code: "DIR TRANS", order: 8, isActive: true },
+    { id: 9, name: "DIREKTUR MANAJEMEN PEMBANGKITAN (DIR MKIT)", code: "DIR MKIT", order: 9, isActive: true },
+    { id: 10, name: "DIREKTUR MANAJEMEN RISIKO (DIR MRO)", code: "DIR MRO", order: 10, isActive: true },
+    { id: 11, name: "DIREKTUR TEKNOLOGI, ENGINEERING, DAN KEBERLANJUTAN (DIR TNK)", code: "DIR TNK", order: 11, isActive: true },
 ];
 
 export function DireksiTab() {
