@@ -6,7 +6,8 @@ import {
     timestamp,
     date,
     jsonb,
-    boolean
+    boolean,
+    integer
 } from "drizzle-orm/pg-core";
 
 // --- USERS TABLE (Updated to UUID for consistency) ---
@@ -18,6 +19,48 @@ export const users = pgTable('users', {
     role: text('role').default('user'),
     isActive: boolean('is_active').default(true),
     createdAt: timestamp('created_at').defaultNow(),
+});
+
+// --- TWO FACTOR AUTHENTICATION TABLE ---
+export const twoFactorAuth = pgTable('two_factor_auth', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+
+    // Encrypted TOTP secret (encrypted with server-side key)
+    encryptedSecret: text('encrypted_secret').notNull(),
+
+    // Backup codes (hashed, stored as JSON array)
+    backupCodes: jsonb('backup_codes').default([]),
+
+    // Status
+    isEnabled: boolean('is_enabled').default(false).notNull(),
+    isVerified: boolean('is_verified').default(false).notNull(),
+
+    // Security tracking
+    lastUsedAt: timestamp('last_used_at'),
+    failedAttempts: integer('failed_attempts').default(0),
+    lockedUntil: timestamp('locked_until'),
+
+    // Timestamps
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// --- 2FA AUDIT LOG TABLE ---
+export const twoFactorAuditLog = pgTable('two_factor_audit_log', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+
+    // Action types: 'setup_initiated', 'setup_completed', 'verification_success', 
+    // 'verification_failed', 'backup_code_used', 'disabled', 'locked', 'unlocked'
+    action: text('action').notNull(),
+
+    // Additional metadata
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    metadata: jsonb('metadata').default({}),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // --- BASE TABLE (Common Fields) ---
