@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, Cell } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, Cell, LabelList } from "recharts";
 import {
     Card,
     CardContent,
@@ -34,19 +34,11 @@ interface AttendanceChartProps {
 const chartConfig = {
     hadir: {
         label: "Hadir",
-        color: "#125d72",
+        color: "#125d72", // primary
     },
     hadirDisplay: {
         label: "Hadir",
-        color: "#125d72",
-    },
-    kuasa: {
-        label: "Kuasa",
-        color: "#efe62f",
-    },
-    kuasaDisplay: {
-        label: "Kuasa",
-        color: "#efe62f",
+        color: "#125d72", // primary
     },
 } satisfies ChartConfig;
 
@@ -71,15 +63,17 @@ export function AttendanceChart({ data: initialData }: AttendanceChartProps) {
         });
     }, [period]);
 
-    // Transform data to ensure bars are always visible
+    // Transform data to ensure bars are always visible and calculate percentage
     const chartData = useMemo(() => {
-        return data.map((d) => ({
-            ...d,
-            hadirOriginal: d.hadir,
-            hadirDisplay: d.hadir === 0 ? MIN_DISPLAY : d.hadir,
-            kuasaOriginal: d.kuasa,
-            kuasaDisplay: d.kuasa === 0 ? MIN_DISPLAY : d.kuasa,
-        }));
+        return data.map((d) => {
+            const percent = d.totalMeetings > 0 ? Math.round((d.hadir / d.totalMeetings) * 100) : 0;
+            return {
+                ...d,
+                hadirOriginal: d.hadir,
+                hadirDisplay: d.hadir === 0 ? MIN_DISPLAY : d.hadir,
+                hadirPercent: percent,
+            };
+        });
     }, [data]);
 
     const totalMeetings = data.length > 0 && data[0] ? data[0].totalMeetings : 0;
@@ -127,7 +121,7 @@ export function AttendanceChart({ data: initialData }: AttendanceChartProps) {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
                     <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-[#125d72]" />
+                        <Users className="h-5 w-5 text-primary" />
                         Kehadiran Direksi
                     </CardTitle>
                     <CardDescription>
@@ -150,7 +144,7 @@ export function AttendanceChart({ data: initialData }: AttendanceChartProps) {
             <CardContent className="relative">
                 {isPending && (
                     <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#125d72]" />
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 )}
                 <ChartContainer config={chartConfig} className="h-48 w-full">
@@ -169,33 +163,31 @@ export function AttendanceChart({ data: initialData }: AttendanceChartProps) {
                                 <ChartTooltipContent
                                     indicator="dashed"
                                     formatter={(value, name, props) => {
-                                        // Show original values in tooltip, not the display values
                                         if (name === "hadirDisplay") {
                                             const originalValue = props.payload?.hadirOriginal ?? 0;
                                             return [originalValue, "Hadir"];
-                                        }
-                                        if (name === "kuasaDisplay") {
-                                            const originalValue = props.payload?.kuasaOriginal ?? 0;
-                                            return [originalValue, "Kuasa"];
                                         }
                                         return [value, name];
                                     }}
                                 />
                             }
                         />
-                        <Bar dataKey="hadirDisplay" fill="var(--color-hadir)" radius={4}>
+                        <Bar
+                            dataKey="hadirDisplay"
+                            fill="#125d72"
+                            radius={4}
+                        >
+                            <LabelList
+                                dataKey="hadirPercent"
+                                position="insideTop"
+                                fill="#fff"
+                                fontSize={12}
+                                formatter={(value: number) => `${value}%`}
+                            />
                             {chartData.map((entry, index) => (
                                 <Cell
                                     key={`cell-hadir-${index}`}
                                     fill={entry.hadirOriginal === 0 ? "rgba(18, 93, 114, 0.3)" : "#125d72"}
-                                />
-                            ))}
-                        </Bar>
-                        <Bar dataKey="kuasaDisplay" fill="var(--color-kuasa)" radius={4}>
-                            {chartData.map((entry, index) => (
-                                <Cell
-                                    key={`cell-${index}`}
-                                    fill={entry.kuasaOriginal === 0 ? "rgba(239, 230, 47, 0.3)" : "#efe62f"}
                                 />
                             ))}
                         </Bar>
@@ -213,12 +205,8 @@ export function AttendanceChart({ data: initialData }: AttendanceChartProps) {
                 </div>
                 <div className="flex items-center gap-4 text-muted-foreground leading-none">
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-[#125d72]" />
+                        <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
                         <span>Hadir</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-[#efe62f]" />
-                        <span>Kuasa</span>
                     </div>
                 </div>
             </CardFooter>
