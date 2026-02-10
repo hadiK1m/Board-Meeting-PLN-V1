@@ -8,6 +8,7 @@ import { sidebarData } from "@/config/sidebar-data";
 import { logoutAction } from "@/actions/auth/logout"; // Import Action Logout
 import { showNotify } from "@/components/shared/toast-provider"; // Toast notifikasi
 import { cn } from "@/lib/utils";
+import type { CurrentUserData } from "@/server/actions/user-actions";
 
 import {
     Collapsible,
@@ -61,7 +62,11 @@ function useMenuPersistence() {
     return { openMenus, toggleMenu };
 }
 
-export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+    user: CurrentUserData | null;
+}
+
+export function AppSidebar({ className, user, ...props }: AppSidebarProps) {
     const activeTeam = sidebarData.teams[0];
     const pathname = usePathname(); // Dapatkan URL saat ini
     const { openMenus, toggleMenu } = useMenuPersistence();
@@ -190,12 +195,12 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                                 >
                                     <Avatar className="h-8 w-8 rounded-lg">
-                                        <AvatarImage src="" alt="Admin" />
-                                        <AvatarFallback className="rounded-lg">HN</AvatarFallback>
+                                        <AvatarImage src="" alt={user?.fullName || "User"} />
+                                        <AvatarFallback className="rounded-lg">{user?.initials || "U"}</AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">Hadi Nurhakim</span>
-                                        <span className="truncate text-xs">hadi@boardmeeting.id</span>
+                                        <span className="truncate font-semibold">{user?.fullName || "Guest"}</span>
+                                        <span className="truncate text-xs">{user?.email || ""}</span>
                                     </div>
                                     <MoreHorizontal className="ml-auto size-4" />
                                 </SidebarMenuButton>
@@ -209,11 +214,11 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                                 <DropdownMenuLabel className="p-0 font-normal">
                                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                         <Avatar className="h-8 w-8 rounded-lg">
-                                            <AvatarFallback className="rounded-lg">HN</AvatarFallback>
+                                            <AvatarFallback className="rounded-lg">{user?.initials || "U"}</AvatarFallback>
                                         </Avatar>
                                         <div className="grid flex-1 text-left text-sm leading-tight">
-                                            <span className="truncate font-semibold">Hadi Nurhakim</span>
-                                            <span className="truncate text-xs">Admin System</span>
+                                            <span className="truncate font-semibold">{user?.fullName || "Guest"}</span>
+                                            <span className="truncate text-xs">{user?.role || "User"}</span>
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>

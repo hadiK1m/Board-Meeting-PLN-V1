@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export interface UserData {
@@ -15,6 +16,61 @@ export interface UserData {
     isActive: boolean;
     createdAt: Date | null;
     lastSignIn?: string | null;
+}
+
+export interface CurrentUserData {
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    initials: string;
+}
+
+/**
+ * Get current authenticated user data from database
+ */
+export async function getCurrentUser(): Promise<CurrentUserData | null> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return null;
+        }
+
+        // Get user data from database
+        const [userData] = await db
+            .select({
+                id: users.id,
+                fullName: users.fullName,
+                email: users.email,
+                role: users.role,
+            })
+            .from(users)
+            .where(eq(users.id, user.id))
+            .limit(1);
+
+        if (!userData) {
+            return null;
+        }
+
+        // Generate initials from full name
+        const initials = userData.fullName
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+
+        return {
+            ...userData,
+            role: userData.role || 'User',
+            initials,
+        };
+    } catch (error) {
+        console.error('Error fetching current user:', error);
+        return null;
+    }
 }
 
 // Get all users (combine Supabase Auth + local DB)

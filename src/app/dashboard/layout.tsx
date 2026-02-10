@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"; // ✅ Import wajib untuk baca cookie di server
-import { AppSidebar } from "@/components/layout/app-sidebar";
+import { AppSidebarWrapper } from "@/components/layout/app-sidebar-wrapper";
 import { DynamicBreadcrumb } from "@/components/layout/dynamic-breadcrumb";
 import {
     SidebarInset,
@@ -20,7 +20,7 @@ export default async function DashboardLayout({
     return (
         // 2. Kirim status tersebut ke SidebarProvider agar Server & Client sinkron
         <SidebarProvider defaultOpen={defaultOpen}>
-            <AppSidebar />
+            <AppSidebarWrapper />
             <SidebarInset>
                 {/* --- HEADER DASHBOARD (Sticky) --- */}
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sticky top-0 bg-background z-10">
