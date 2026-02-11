@@ -152,3 +152,94 @@ export async function deleteOrganizationalUnit(id: string): Promise<void> {
         throw new Error("Gagal menghapus data");
     }
 }
+
+// ============================================
+// Direksi-specific Operations
+// ============================================
+
+// Get all Direksi (DIREKTUR_PEMRAKARSA category) with custom ordering
+export async function getDireksiList(): Promise<OrganizationalUnit[]> {
+    try {
+        const data = await db
+            .select()
+            .from(organizationalUnits)
+            .where(eq(organizationalUnits.category, "DIREKTUR_PEMRAKARSA"))
+            .orderBy(asc(organizationalUnits.name));
+
+        // Sort sesuai urutan resmi
+        return data.sort((a, b) => {
+            const indexA = DIRECTOR_ORDER.indexOf(a.name);
+            const indexB = DIRECTOR_ORDER.indexOf(b.name);
+            const orderA = indexA === -1 ? DIRECTOR_ORDER.length : indexA;
+            const orderB = indexB === -1 ? DIRECTOR_ORDER.length : indexB;
+            return orderA - orderB;
+        });
+    } catch (error) {
+        console.error("❌ Gagal mengambil data direksi:", error);
+        throw new Error("Gagal mengambil data direksi");
+    }
+}
+
+// Create new Direksi
+export async function createDireksi(data: {
+    name: string;
+    code: string;
+}): Promise<OrganizationalUnit> {
+    try {
+        const [result] = await db
+            .insert(organizationalUnits)
+            .values({
+                name: data.name,
+                code: data.code,
+                category: "DIREKTUR_PEMRAKARSA",
+                isActive: true,
+            })
+            .returning();
+
+        if (!result) {
+            throw new Error("Insert failed - no result returned");
+        }
+        return result;
+    } catch (error) {
+        console.error("❌ Gagal membuat direksi:", error);
+        throw new Error("Gagal menambahkan direksi");
+    }
+}
+
+// Update Direksi
+export async function updateDireksi(
+    id: string,
+    data: Partial<{
+        name: string;
+        code: string;
+        isActive: boolean;
+    }>
+): Promise<OrganizationalUnit> {
+    try {
+        const [result] = await db
+            .update(organizationalUnits)
+            .set(data)
+            .where(eq(organizationalUnits.id, id))
+            .returning();
+
+        if (!result) {
+            throw new Error("Update failed - no result returned");
+        }
+        return result;
+    } catch (error) {
+        console.error("❌ Gagal memperbarui direksi:", error);
+        throw new Error("Gagal memperbarui direksi");
+    }
+}
+
+// Delete Direksi
+export async function deleteDireksi(id: string): Promise<void> {
+    try {
+        await db
+            .delete(organizationalUnits)
+            .where(eq(organizationalUnits.id, id));
+    } catch (error) {
+        console.error("❌ Gagal menghapus direksi:", error);
+        throw new Error("Gagal menghapus direksi");
+    }
+}
