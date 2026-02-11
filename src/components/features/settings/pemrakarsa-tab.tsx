@@ -46,7 +46,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, MoreHorizontal, Pencil, Trash2, Briefcase, Loader2, Search } from "lucide-react";
 import { getOrganizationalUnits, createOrganizationalUnit, updateOrganizationalUnit, deleteOrganizationalUnit, type OrganizationalUnit } from "@/server/master-data-actions";
-import { toast } from "sonner";
+import { showNotify } from "@/components/shared/toast-provider";
 
 const CATEGORY_OPTIONS = [
     { value: "DIREKTUR_PEMRAKARSA", label: "Direktur Pemrakarsa" },
@@ -72,7 +72,7 @@ export function PemrakarsaTab() {
                 const data = await getOrganizationalUnits();
                 setUnits(data);
             } catch (error) {
-                toast.error("Gagal memuat data pemrakarsa");
+                showNotify("Gagal memuat data pemrakarsa", "error");
                 console.error(error);
             } finally {
                 setIsLoading(false);
@@ -91,7 +91,7 @@ export function PemrakarsaTab() {
 
     const handleAdd = () => {
         if (!newUnit.name || !newUnit.category) {
-            toast.error("Nama dan kategori wajib diisi");
+            showNotify("Nama dan kategori wajib diisi", "error");
             return;
         }
 
@@ -105,9 +105,9 @@ export function PemrakarsaTab() {
                 setUnits([...units, result]);
                 setNewUnit({ name: "", code: "", category: "" });
                 setIsAddDialogOpen(false);
-                toast.success("Pemrakarsa berhasil ditambahkan");
+                showNotify("Pemrakarsa berhasil ditambahkan", "success");
             } catch (error) {
-                toast.error("Gagal menambahkan pemrakarsa");
+                showNotify("Gagal menambahkan pemrakarsa", "error");
                 console.error(error);
             }
         });
@@ -127,9 +127,9 @@ export function PemrakarsaTab() {
                 setUnits(units.map(u => u.id === result.id ? result : u));
                 setIsEditDialogOpen(false);
                 setEditingUnit(null);
-                toast.success("Pemrakarsa berhasil diperbarui");
+                showNotify("Pemrakarsa berhasil diperbarui", "success");
             } catch (error) {
-                toast.error("Gagal memperbarui pemrakarsa");
+                showNotify("Gagal memperbarui pemrakarsa", "error");
                 console.error(error);
             }
         });
@@ -140,9 +140,9 @@ export function PemrakarsaTab() {
             try {
                 await deleteOrganizationalUnit(id);
                 setUnits(units.filter(u => u.id !== id));
-                toast.success("Pemrakarsa berhasil dihapus");
+                showNotify("Pemrakarsa berhasil dihapus", "success");
             } catch (error) {
-                toast.error("Gagal menghapus pemrakarsa");
+                showNotify("Gagal menghapus pemrakarsa", "error");
                 console.error(error);
             }
         });
@@ -155,8 +155,12 @@ export function PemrakarsaTab() {
                     isActive: !unit.isActive,
                 });
                 setUnits(units.map(u => u.id === result.id ? result : u));
+                showNotify(
+                    result.isActive ? "Pemrakarsa diaktifkan" : "Pemrakarsa dinonaktifkan",
+                    "success"
+                );
             } catch (error) {
-                toast.error("Gagal mengubah status");
+                showNotify("Gagal mengubah status", "error");
                 console.error(error);
             }
         });
