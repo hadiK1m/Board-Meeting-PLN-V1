@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useMemo, useRef, useEffect, useCallback } from "react";
 import type ReactQuillNS from "react-quill-new";
 import type Quill from "quill";
+import "react-quill-new/dist/quill.snow.css";
 // Flag to track if custom blot has been registered
 let blotRegistered = false;
 
@@ -375,6 +376,35 @@ export function RichTextEditor({
                     border-top-right-radius: 0.5rem;
                     background: #f8fafc;
                     border-color: #e2e8f0;
+                    padding: 4px 6px;
+                }
+                .rich-text-editor .ql-toolbar .ql-formats {
+                    margin-right: 8px;
+                }
+                .rich-text-editor .ql-snow.ql-toolbar button,
+                .rich-text-editor .ql-snow .ql-toolbar button {
+                    width: 24px;
+                    height: 24px;
+                    padding: 3px;
+                }
+                .rich-text-editor .ql-snow.ql-toolbar button svg,
+                .rich-text-editor .ql-snow .ql-toolbar button svg {
+                    width: 16px;
+                    height: 16px;
+                }
+                .rich-text-editor .ql-snow .ql-picker {
+                    height: 24px;
+                    font-size: 12px;
+                }
+                .rich-text-editor .ql-snow .ql-picker-label {
+                    padding: 2px 4px;
+                    line-height: 20px;
+                }
+                .rich-text-editor .ql-snow .ql-picker-label::before {
+                    line-height: 20px;
+                }
+                .rich-text-editor .ql-snow .ql-picker-label .ql-stroke {
+                    top: 50%;
                 }
                 .rich-text-editor .ql-container {
                     border-bottom-left-radius: 0.5rem;
