@@ -71,7 +71,7 @@ export function PreviewSection() {
                         </div>
                         <div className="pl-4 border-l border-slate-100 flex items-center gap-3">
                             <div className="text-right hidden xl:block">
-                                <div className="text-xs font-bold text-slate-700">Hadi Nurhakim</div>
+                                <div className="text-xs font-bold text-slate-700">Administrator</div>
                                 <div className="text-[10px] text-slate-400">Administrator</div>
                             </div>
                             <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
