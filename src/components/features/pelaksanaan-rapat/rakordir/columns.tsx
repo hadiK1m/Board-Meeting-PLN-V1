@@ -5,7 +5,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { NotulensiMeetingSummary } from "@/server/actions/pelaksanaan-rakordir-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Calendar, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -13,8 +13,29 @@ import { EditNotulensiNumberDialog } from "./edit-notulensi-number-dialog";
 
 export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
     {
+        id: "number",
+        header: "No.",
+        cell: ({ row }) => (
+            <span className="text-sm text-muted-foreground font-medium">
+                {row.index + 1}
+            </span>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
         accessorKey: "notulensiNumber",
-        header: "Nomor Notulensi",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 h-8"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Nomor Notulensi
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
+            </Button>
+        ),
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
                 <span className="font-bold text-[#006070]">{row.original.notulensiNumber}</span>
@@ -24,20 +45,48 @@ export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
     },
     {
         accessorKey: "executionDate",
-        header: "Tanggal & Waktu",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 h-8"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Tanggal & Waktu
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
+            </Button>
+        ),
         cell: ({ row }) => {
             const date = row.original.executionDate;
+            const startTime = row.original.startTime;
+            const endTime = row.original.endTime;
             return (
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Calendar className="h-4 w-4 text-slate-400" />
-                    {date ? format(new Date(date), "dd MMM yyyy", { locale: id }) : "-"}
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-slate-700 font-medium">
+                        <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                        {date ? format(new Date(date), "EEEE, dd MMMM yyyy", { locale: id }) : "-"}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        {startTime || "-"} - {endTime || "Selesai"}
+                    </div>
                 </div>
             );
         },
     },
     {
         accessorKey: "location",
-        header: "Lokasi",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 h-8"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Lokasi
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
+            </Button>
+        ),
         cell: ({ row }) => (
             <div className="flex items-center gap-2 text-sm text-slate-600">
                 <MapPin className="h-4 w-4 text-slate-400" />
@@ -49,7 +98,17 @@ export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
     },
     {
         accessorKey: "agendaCount",
-        header: "Jumlah Agenda",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 h-8"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Jumlah Agenda
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
+            </Button>
+        ),
         cell: ({ row }) => (
             <Badge variant="secondary" className="bg-slate-100 text-slate-700">
                 {row.original.agendaCount} Agenda
@@ -58,7 +117,17 @@ export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 h-8"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Status
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
+            </Button>
+        ),
         cell: ({ row }) => (
             <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
                 {row.original.status}
@@ -78,5 +147,7 @@ export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
                 </Link>
             );
         },
+        enableSorting: false,
+        enableHiding: false,
     },
 ];

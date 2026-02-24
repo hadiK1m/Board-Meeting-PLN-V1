@@ -11,6 +11,8 @@ export type MeetingSummary = {
     meetingNumber: string;
     meetingYear: string | null;
     executionDate: string | null;
+    startTime: string | null;
+    endTime: string | null;
     location: string | null;
     agendaCount: number;
     status: string; // Status meeting (bisa diambil dari status agenda mayoritas)
@@ -24,6 +26,8 @@ export async function getRadirMeetings(): Promise<MeetingSummary[]> {
                 meetingNumber: agendasRadir.meetingNumber,
                 meetingYear: agendasRadir.meetingYear,
                 executionDate: agendasRadir.executionDate,
+                startTime: agendasRadir.startTime,
+                endTime: agendasRadir.endTime,
                 location: agendasRadir.meetingLocation,
                 status: agendas.status,
             })
@@ -40,6 +44,8 @@ export async function getRadirMeetings(): Promise<MeetingSummary[]> {
                     meetingNumber: key,
                     meetingYear: row.meetingYear,
                     executionDate: row.executionDate,
+                    startTime: row.startTime,
+                    endTime: row.endTime,
                     location: row.location,
                     agendaCount: 0,
                     status: row.status, // Ambil status dari salah satu agenda

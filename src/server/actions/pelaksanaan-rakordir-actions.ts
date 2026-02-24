@@ -11,6 +11,8 @@ export type NotulensiMeetingSummary = {
     notulensiNumber: string;
     meetingYear: string | null;
     executionDate: string | null;
+    startTime: string | null;
+    endTime: string | null;
     location: string | null;
     agendaCount: number;
     status: string;
@@ -24,6 +26,8 @@ export async function getRakordirMeetings(): Promise<NotulensiMeetingSummary[]> 
                 notulensiNumber: agendasRakordir.notulensiNumber,
                 meetingYear: agendasRakordir.meetingYear,
                 executionDate: agendasRakordir.executionDate,
+                startTime: agendasRakordir.startTime,
+                endTime: agendasRakordir.endTime,
                 location: agendasRakordir.meetingLocation,
                 status: agendas.status,
             })
@@ -43,6 +47,8 @@ export async function getRakordirMeetings(): Promise<NotulensiMeetingSummary[]> 
                     notulensiNumber: key,
                     meetingYear: row.meetingYear,
                     executionDate: row.executionDate,
+                    startTime: row.startTime,
+                    endTime: row.endTime,
                     location: row.location,
                     agendaCount: 0,
                     status: row.status,
