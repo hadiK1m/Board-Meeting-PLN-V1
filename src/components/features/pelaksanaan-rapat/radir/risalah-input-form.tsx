@@ -1,7 +1,7 @@
 // src/components/features/pelaksanaan-rapat/radir/risalah-input-form.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users, FileText, Scale, MessageSquareWarning, Gavel, FolderOpen } from "lucide-react";
 
@@ -85,6 +85,29 @@ export function RisalahInputForm({ initialData, directorOptions }: RisalahInputF
     const [isExporting, setIsExporting] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
     const [localAgendas, setLocalAgendas] = useState(initialData.agendas);
+
+    // Sync local state with server data when initialData changes (e.g., after router.refresh from add/remove agenda)
+    useEffect(() => {
+        setLocalAgendas(initialData.agendas);
+        // Initialize perAgendaContent for any newly added agendas
+        setPerAgendaContent(prev => {
+            const updated = { ...prev };
+            let hasNew = false;
+            initialData.agendas.forEach(agenda => {
+                if (!updated[agenda.id]) {
+                    hasNew = true;
+                    updated[agenda.id] = {
+                        executiveSummary: initialData.perAgendaContent?.[agenda.id]?.executiveSummary || "",
+                        considerations: initialData.perAgendaContent?.[agenda.id]?.considerations || "",
+                        meetingDecisions: initialData.perAgendaContent?.[agenda.id]?.meetingDecisions || [],
+                        dissentingOpinion: initialData.perAgendaContent?.[agenda.id]?.dissentingOpinion || "",
+                    };
+                }
+            });
+            return hasNew ? updated : prev;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialData.agendas]);
 
     // Debug: Log initial data
     console.log("=== RisalahInputForm initialData ===");
@@ -430,6 +453,15 @@ export function RisalahInputForm({ initialData, directorOptions }: RisalahInputF
                         onRemoveAgenda={handleRemoveAgenda}
                         isRemoving={isRemoving}
                         onInfoUpdated={() => router.refresh()}
+                        sharedData={{
+                            pimpinanRapat,
+                            attendanceData,
+                            guestParticipants,
+                            risalahTtd,
+                        }}
+                        onAgendaAdded={() => {
+                            router.refresh();
+                        }}
                     />
                 </div>
 

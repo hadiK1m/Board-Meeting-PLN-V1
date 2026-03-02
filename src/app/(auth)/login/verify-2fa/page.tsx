@@ -247,11 +247,11 @@ export default function Verify2FAPage() {
                                 <p className="text-xs text-slate-500">Gunakan kode cadangan sebagai alternatif</p>
                             </div>
                         </div>
-                        <Link href="/login/verify-2fa/backup">
-                            <Button variant="outline" size="sm" className="text-[#006070] border-[#006070]/30 hover:bg-[#006070]/5">
+                        <Button asChild variant="outline" size="sm" className="text-[#006070] border-[#006070]/30 hover:bg-[#006070]/5">
+                            <Link href="/login/verify-2fa/backup">
                                 Kode Cadangan
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     </div>
                 </CardContent>
             </Card>

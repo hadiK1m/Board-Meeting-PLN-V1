@@ -41,15 +41,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // --- HELPER HOOK UNTUK PERSISTENCE ---
 // Menyimpan status buka/tutup menu di LocalStorage
+// Menggunakan hasMounted guard untuk mencegah hydration mismatch
 function useMenuPersistence() {
+    const [hasMounted, setHasMounted] = React.useState(false);
     const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({});
 
-    // 1. Load state saat pertama kali render (Client-Side only)
+    // 1. Tandai bahwa komponen sudah di-mount (post-hydration safe)
     React.useEffect(() => {
         const savedState = localStorage.getItem("sidebar-menu-state");
         if (savedState) {
-            setOpenMenus(JSON.parse(savedState));
+            try {
+                setOpenMenus(JSON.parse(savedState));
+            } catch {
+                // Jika data corrupt, reset
+                localStorage.removeItem("sidebar-menu-state");
+            }
         }
+        setHasMounted(true);
     }, []);
 
     // 2. Fungsi untuk toggle dan simpan ke storage
@@ -59,7 +67,7 @@ function useMenuPersistence() {
         localStorage.setItem("sidebar-menu-state", JSON.stringify(newState));
     };
 
-    return { openMenus, toggleMenu };
+    return { openMenus, toggleMenu, hasMounted };
 }
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -69,7 +77,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ className, user, ...props }: AppSidebarProps) {
     const activeTeam = sidebarData.teams[0];
     const pathname = usePathname(); // Dapatkan URL saat ini
-    const { openMenus, toggleMenu } = useMenuPersistence();
+    const { openMenus, toggleMenu, hasMounted } = useMenuPersistence();
 
     // --- HANDLER LOGOUT AMAN ---
     const handleLogout = async () => {
@@ -83,7 +91,7 @@ export function AppSidebar({ className, user, ...props }: AppSidebarProps) {
     };
 
     return (
-        <Sidebar collapsible="icon" className={cn("z-50", className)} {...props} suppressHydrationWarning>
+        <Sidebar collapsible="icon" className={cn("z-50", className)} {...props}>
             {/* --- HEADER --- */}
             <SidebarHeader>
                 <SidebarMenu>
@@ -124,9 +132,11 @@ export function AppSidebar({ className, user, ...props }: AppSidebarProps) {
                             );
 
                             // Logika Buka/Tutup:
-                            // 1. Prioritas Utama: State dari LocalStorage (openMenus)
-                            // 2. Fallback: Jika URL aktif ada di dalam menu ini, buka otomatis
-                            const isOpen = openMenus[item.title] ?? isChildActive ?? false;
+                            // 1. Sebelum mount: hanya gunakan isChildActive (SSR-safe, deterministic)
+                            // 2. Setelah mount: prioritas dari LocalStorage, fallback ke isChildActive
+                            const isOpen = hasMounted
+                                ? (openMenus[item.title] ?? isChildActive ?? false)
+                                : (isChildActive ?? false);
 
                             return (
                                 <Collapsible
@@ -138,13 +148,13 @@ export function AppSidebar({ className, user, ...props }: AppSidebarProps) {
                                 >
                                     <SidebarMenuItem>
                                         <CollapsibleTrigger asChild>
-                                            <SidebarMenuButton tooltip={item.title} suppressHydrationWarning>
+                                            <SidebarMenuButton tooltip={item.title}>
                                                 {item.icon && <item.icon />}
                                                 <span>{item.title}</span>
                                                 <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                                             </SidebarMenuButton>
                                         </CollapsibleTrigger>
-                                        <CollapsibleContent suppressHydrationWarning>
+                                        <CollapsibleContent>
                                             <SidebarMenuSub>
                                                 {item.items?.map((subItem) => (
                                                     <SidebarMenuSubItem key={subItem.title}>

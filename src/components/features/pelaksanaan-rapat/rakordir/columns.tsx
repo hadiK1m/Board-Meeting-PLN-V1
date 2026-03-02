@@ -140,11 +140,11 @@ export const columns: ColumnDef<NotulensiMeetingSummary>[] = [
         cell: ({ row }) => {
             const url = `/dashboard/pelaksanaan-rapat/rakordir/input/${encodeURIComponent(row.original.notulensiNumber)}`;
             return (
-                <Link href={url}>
-                    <Button variant="ghost" size="sm" className="text-[#006070] hover:bg-[#e6f2f5]">
+                <Button asChild variant="ghost" size="sm" className="text-[#006070] hover:bg-[#e6f2f5]">
+                    <Link href={url}>
                         Input Notulensi <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </Link>
+                    </Link>
+                </Button>
             );
         },
         enableSorting: false,

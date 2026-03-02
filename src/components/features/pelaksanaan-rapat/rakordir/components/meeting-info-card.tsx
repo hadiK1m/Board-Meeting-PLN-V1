@@ -525,7 +525,7 @@ export function MeetingInfoCard({
                                     Tambah
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-lg">
+                            <DialogContent className="sm:max-w-lg overflow-visible">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2">
                                         <Plus className="h-5 w-5 text-[#006070]" />
@@ -565,7 +565,6 @@ export function MeetingInfoCard({
                                                 placeholder="Pilih satu atau lebih agenda..."
                                                 noOptionsMessage={() => "Tidak ada agenda yang tersedia"}
                                                 isDisabled={isAddingAgenda}
-                                                menuPortalTarget={document.body}
                                                 menuPlacement="auto"
                                                 closeMenuOnSelect={false}
                                             />

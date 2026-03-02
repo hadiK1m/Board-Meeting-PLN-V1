@@ -1,9 +1,10 @@
 // src/components/features/pelaksanaan-rapat/radir/components/meeting-info-card.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import ReactSelect, { StylesConfig } from "react-select";
 import {
     FileText,
     ClipboardList,
@@ -16,6 +17,7 @@ import {
     Loader2,
     Check,
     XCircle,
+    Plus,
 } from "lucide-react";
 
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
@@ -52,7 +54,82 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { showNotify } from "@/components/shared/toast-provider";
-import { updateMeetingInfoAction } from "@/server/actions/pelaksanaan-rapat-actions";
+import {
+    updateMeetingInfoAction,
+    getDijadwalkanRadirAgendas,
+    addAgendaToMeetingAction,
+} from "@/server/actions/pelaksanaan-rapat-actions";
+
+interface Option {
+    label: string;
+    value: string;
+}
+
+// Custom Styles for React Select
+const selectStyles: StylesConfig<Option, true> = {
+    control: (base, state) => ({
+        ...base,
+        borderColor: state.isFocused ? "#006070" : "#e2e8f0",
+        boxShadow: state.isFocused ? "0 0 0 1px #006070" : "none",
+        borderRadius: "0.5rem",
+        minHeight: "2.5rem",
+        fontSize: "0.875rem",
+        "&:hover": {
+            borderColor: "#006070"
+        }
+    }),
+    input: (base) => ({
+        ...base,
+        color: "#1e293b",
+    }),
+    menu: (base) => ({
+        ...base,
+        zIndex: 99999,
+    }),
+    menuList: (base) => ({
+        ...base,
+        maxHeight: "200px",
+    }),
+    option: (base, state) => ({
+        ...base,
+        backgroundColor: state.isSelected ? "#006070" : state.isFocused ? "#e6f2f5" : "white",
+        color: state.isSelected ? "white" : "#1e293b",
+        cursor: "pointer",
+        "&:active": {
+            backgroundColor: "#006070",
+            color: "white",
+        },
+    }),
+    multiValue: (base) => ({
+        ...base,
+        backgroundColor: "#e6f2f5",
+        borderRadius: "0.25rem",
+        border: "1px solid #bce3eb",
+        maxWidth: "200px",
+    }),
+    multiValueLabel: (base) => ({
+        ...base,
+        color: "#006070",
+        fontWeight: "600",
+        fontSize: "0.75rem",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+    }),
+    multiValueRemove: (base) => ({
+        ...base,
+        color: "#006070",
+        "&:hover": {
+            backgroundColor: "#006070",
+            color: "white",
+        },
+    }),
+    menuPortal: (base) => ({
+        ...base,
+        zIndex: 99999,
+    }),
+    placeholder: (base) => ({ ...base, color: "#94a3b8" }),
+};
 
 interface MeetingInfoCardProps {
     meetingNumber: string;
@@ -72,6 +149,13 @@ interface MeetingInfoCardProps {
     onRemoveAgenda?: (agendaId: string) => void;
     isRemoving?: boolean;
     onInfoUpdated?: () => void;
+    onAgendaAdded?: (newAgendaIds: string[]) => void;
+    sharedData?: {
+        pimpinanRapat?: string[];
+        attendanceData?: Record<string, { status: string; keterangan?: string }>;
+        guestParticipants?: { name: string; jabatan: string }[];
+        risalahTtd?: string | null;
+    };
 }
 
 export function MeetingInfoCard({
@@ -88,10 +172,17 @@ export function MeetingInfoCard({
     onRemoveAgenda,
     isRemoving,
     onInfoUpdated,
+    onAgendaAdded,
+    sharedData,
 }: MeetingInfoCardProps) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isAddAgendaDialogOpen, setIsAddAgendaDialogOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingAgendas, setIsLoadingAgendas] = useState(false);
+    const [isAddingAgenda, setIsAddingAgenda] = useState(false);
     const [isCustomEndTime, setIsCustomEndTime] = useState(endTime !== "Selesai" && endTime !== null && endTime !== "");
+    const [agendaOptions, setAgendaOptions] = useState<Option[]>([]);
+    const [selectedAgendas, setSelectedAgendas] = useState<Option[]>([]);
     const [formData, setFormData] = useState({
         executionDate: executionDate || "",
         startTime: startTime || "",
@@ -100,6 +191,24 @@ export function MeetingInfoCard({
         meetingMethod: meetingMethod || "HYBRID (Campuran)",
         meetingLink: meetingLink || "",
     });
+
+    // Fetch available agendas when add agenda dialog opens
+    useEffect(() => {
+        let isMounted = true;
+        if (isAddAgendaDialogOpen) {
+            const fetchAgendas = async () => {
+                setIsLoadingAgendas(true);
+                try {
+                    const options = await getDijadwalkanRadirAgendas();
+                    if (isMounted) setAgendaOptions(options);
+                } finally {
+                    if (isMounted) setIsLoadingAgendas(false);
+                }
+            };
+            fetchAgendas();
+        }
+        return () => { isMounted = false; };
+    }, [isAddAgendaDialogOpen]);
 
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "-";
@@ -147,6 +256,34 @@ export function MeetingInfoCard({
             showNotify("Terjadi kesalahan saat memperbarui informasi rapat.", "error");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleAddAgenda = async () => {
+        if (selectedAgendas.length === 0) {
+            showNotify("Pilih minimal satu agenda.", "error");
+            return;
+        }
+
+        setIsAddingAgenda(true);
+        try {
+            const agendaIds = selectedAgendas.map(a => a.value);
+            const result = await addAgendaToMeetingAction(meetingNumber, agendaIds, sharedData);
+
+            if (result.success) {
+                showNotify(result.message || "Agenda berhasil ditambahkan.", "success");
+                setIsAddAgendaDialogOpen(false);
+                setSelectedAgendas([]);
+                onAgendaAdded?.(agendaIds);
+                onInfoUpdated?.();
+            } else {
+                showNotify(result.error || "Gagal menambahkan agenda.", "error");
+            }
+        } catch (error) {
+            console.error("Error adding agenda:", error);
+            showNotify("Terjadi kesalahan saat menambahkan agenda.", "error");
+        } finally {
+            setIsAddingAgenda(false);
         }
     };
 
@@ -380,9 +517,106 @@ export function MeetingInfoCard({
 
                 {/* Agenda List */}
                 <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                        <ClipboardList className="h-3 w-3" /> Daftar Agenda
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                            <ClipboardList className="h-3 w-3" /> Daftar Agenda
+                        </p>
+                        <Dialog open={isAddAgendaDialogOpen} onOpenChange={setIsAddAgendaDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-[#006070] hover:text-[#004d5a] hover:bg-[#006070]/10"
+                                >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Tambah
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-lg overflow-visible">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                        <Plus className="h-5 w-5 text-[#006070]" />
+                                        Tambah Agenda
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Pilih agenda yang akan ditambahkan ke risalah ini. Data kehadiran dan informasi rapat akan otomatis disinkronkan.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4">
+                                    {isLoadingAgendas ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="h-6 w-6 animate-spin text-[#006070]" />
+                                            <span className="ml-2 text-sm text-muted-foreground">Memuat agenda...</span>
+                                        </div>
+                                    ) : agendaOptions.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                                            <p className="text-sm">Tidak ada agenda yang tersedia.</p>
+                                            <p className="text-xs">Semua agenda sudah ditambahkan ke risalah.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <Label className="text-xs font-bold text-slate-600">PILIH AGENDA</Label>
+                                            <ReactSelect<Option, true>
+                                                isMulti
+                                                options={agendaOptions}
+                                                value={selectedAgendas}
+                                                onChange={(newValue) => {
+                                                    if (newValue) {
+                                                        setSelectedAgendas([...newValue]);
+                                                    } else {
+                                                        setSelectedAgendas([]);
+                                                    }
+                                                }}
+                                                styles={selectStyles}
+                                                placeholder="Pilih satu atau lebih agenda..."
+                                                noOptionsMessage={() => "Tidak ada agenda yang tersedia"}
+                                                isDisabled={isAddingAgenda}
+                                                menuPlacement="auto"
+                                                closeMenuOnSelect={false}
+                                            />
+                                            {selectedAgendas.length > 0 && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {selectedAgendas.length} agenda dipilih
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsAddAgendaDialogOpen(false);
+                                            setSelectedAgendas([]);
+                                        }}
+                                        disabled={isAddingAgenda}
+                                    >
+                                        Batal
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={handleAddAgenda}
+                                        disabled={isAddingAgenda || selectedAgendas.length === 0}
+                                        className="bg-[#006070] hover:bg-[#004050]"
+                                    >
+                                        {isAddingAgenda ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Menambahkan...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Tambah Agenda
+                                            </>
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                     <ScrollArea className="max-h-50">
                         <div className="space-y-2 pr-2">
                             {agendas.map((agenda, idx) => (

@@ -1,7 +1,7 @@
 // src/components/features/pelaksanaan-rapat/rakordir/notulensi-input-form.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users, FileText, MessageSquare, FolderOpen } from "lucide-react";
 
@@ -75,6 +75,27 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
     const [localAgendas, setLocalAgendas] = useState(initialData.agendas);
+
+    // Sync local state with server data when initialData changes (e.g., after router.refresh from add/remove agenda)
+    useEffect(() => {
+        setLocalAgendas(initialData.agendas);
+        // Initialize perAgendaContent for any newly added agendas
+        setPerAgendaContent(prev => {
+            const updated = { ...prev };
+            let hasNew = false;
+            initialData.agendas.forEach(agenda => {
+                if (!updated[agenda.id]) {
+                    hasNew = true;
+                    updated[agenda.id] = {
+                        executiveSummary: initialData.perAgendaContent?.[agenda.id]?.executiveSummary || "",
+                        arahanDireksi: (initialData.perAgendaContent?.[agenda.id]?.arahanDireksi as ArahanItem[]) || [],
+                    };
+                }
+            });
+            return hasNew ? updated : prev;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialData.agendas]);
 
     // Debug: Log initial data
     console.log("=== NotulensiInputForm initialData ===");

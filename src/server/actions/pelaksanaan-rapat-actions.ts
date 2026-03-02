@@ -3,7 +3,7 @@
 
 import { db } from "@/lib/db";
 import { agendas, agendasRadir } from "@/db/schema";
-import { eq, and, isNotNull, ne, inArray, desc } from "drizzle-orm";
+import { eq, and, isNotNull, isNull, ne, inArray, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // Tipe data untuk Meeting (Grouping Agenda)
@@ -64,8 +64,7 @@ export async function getRadirMeetings(): Promise<MeetingSummary[]> {
 
 export async function getDijadwalkanRadirAgendas() {
     try {
-        // Ambil agenda RADIR yang statusnya 'Dijadwalkan' dan BELUM punya nomor meeting (atau mau di-override)
-        // Asumsi: Agenda yang bisa dipilih adalah yang statusnya 'Dijadwalkan'
+        // Ambil agenda RADIR yang statusnya 'Dijadwalkan' dan BELUM punya nomor meeting
         const rows = await db
             .select({
                 id: agendas.id,
@@ -74,7 +73,12 @@ export async function getDijadwalkanRadirAgendas() {
             })
             .from(agendas)
             .innerJoin(agendasRadir, eq(agendas.id, agendasRadir.agendaId))
-            .where(eq(agendas.status, "Dijadwalkan"));
+            .where(
+                and(
+                    eq(agendas.status, "Dijadwalkan"),
+                    isNull(agendasRadir.meetingNumber)
+                )
+            );
 
         return rows.map(r => ({
             label: r.title,
@@ -446,5 +450,70 @@ export async function removeAgendaFromMeetingAction(agendaId: string, meetingNum
     } catch (error) {
         console.error("Error removeAgendaFromMeetingAction:", error);
         return { success: false, error: "Gagal menghapus agenda dari risalah." };
+    }
+}
+
+// Add agenda to existing meeting/risalah
+export async function addAgendaToMeetingAction(
+    meetingNumber: string,
+    agendaIds: string[],
+    sharedData?: {
+        pimpinanRapat?: string[];
+        attendanceData?: Record<string, { status: string; keterangan?: string }>;
+        guestParticipants?: { name: string; jabatan: string }[];
+        risalahTtd?: string | null;
+    }
+) {
+    try {
+        if (agendaIds.length === 0) {
+            return { success: false, error: "Pilih minimal satu agenda." };
+        }
+
+        // Get current meeting info from the existing risalah
+        const existingRows = await db
+            .select({
+                meetingYear: agendasRadir.meetingYear,
+                executionDate: agendasRadir.executionDate,
+                startTime: agendasRadir.startTime,
+                endTime: agendasRadir.endTime,
+                meetingMethod: agendasRadir.meetingMethod,
+                meetingLocation: agendasRadir.meetingLocation,
+                meetingLink: agendasRadir.meetingLink,
+            })
+            .from(agendasRadir)
+            .where(eq(agendasRadir.meetingNumber, meetingNumber))
+            .limit(1);
+
+        const existing = existingRows[0];
+        const meetingYear = existing?.meetingYear || new Date().getFullYear().toString();
+
+        // Update each agenda with the meeting number, shared data, and meeting logistics
+        for (const agendaId of agendaIds) {
+            await db
+                .update(agendasRadir)
+                .set({
+                    meetingNumber: meetingNumber,
+                    meetingYear: meetingYear,
+                    executionDate: existing?.executionDate ?? null,
+                    startTime: existing?.startTime ?? null,
+                    endTime: existing?.endTime ?? null,
+                    meetingMethod: existing?.meetingMethod ?? null,
+                    meetingLocation: existing?.meetingLocation ?? null,
+                    meetingLink: existing?.meetingLink ?? null,
+                    pimpinanRapat: sharedData?.pimpinanRapat ?? [],
+                    attendanceData: sharedData?.attendanceData ?? {},
+                    guestParticipants: sharedData?.guestParticipants ?? [],
+                    risalahTtd: sharedData?.risalahTtd ?? null,
+                })
+                .where(eq(agendasRadir.agendaId, agendaId));
+        }
+
+        revalidatePath(`/dashboard/pelaksanaan-rapat/radir/input/${encodeURIComponent(meetingNumber)}`);
+        revalidatePath("/dashboard/pelaksanaan-rapat/radir");
+
+        return { success: true, message: "Agenda berhasil ditambahkan ke risalah." };
+    } catch (error) {
+        console.error("Error addAgendaToMeetingAction:", error);
+        return { success: false, error: "Gagal menambahkan agenda ke risalah." };
     }
 }

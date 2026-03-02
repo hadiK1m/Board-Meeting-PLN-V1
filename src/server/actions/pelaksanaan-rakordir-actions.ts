@@ -3,7 +3,7 @@
 
 import { db } from "@/lib/db";
 import { agendas, agendasRakordir } from "@/db/schema";
-import { eq, and, isNotNull, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, isNotNull, isNull, inArray, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // Type for Notulensi Meeting Summary
@@ -65,7 +65,7 @@ export async function getRakordirMeetings(): Promise<NotulensiMeetingSummary[]> 
     }
 }
 
-// Get RAKORDIR agendas with status "Dijadwalkan"
+// Get RAKORDIR agendas with status "Dijadwalkan" that are NOT already in a notulensi
 export async function getDijadwalkanRakordirAgendas() {
     try {
         const rows = await db
@@ -76,7 +76,12 @@ export async function getDijadwalkanRakordirAgendas() {
             })
             .from(agendas)
             .innerJoin(agendasRakordir, eq(agendas.id, agendasRakordir.agendaId))
-            .where(eq(agendas.status, "Dijadwalkan"));
+            .where(
+                and(
+                    eq(agendas.status, "Dijadwalkan"),
+                    isNull(agendasRakordir.notulensiNumber)
+                )
+            );
 
         return rows.map(r => ({
             label: r.title,
@@ -413,22 +418,37 @@ export async function addAgendaToNotulensiAction(
             return { success: false, error: "Pilih minimal satu agenda." };
         }
 
-        // Get current meeting year from the notulensi
+        // Get current meeting info from the notulensi (logistics + year)
         const existingRows = await db
-            .select({ meetingYear: agendasRakordir.meetingYear })
+            .select({
+                meetingYear: agendasRakordir.meetingYear,
+                executionDate: agendasRakordir.executionDate,
+                startTime: agendasRakordir.startTime,
+                endTime: agendasRakordir.endTime,
+                meetingMethod: agendasRakordir.meetingMethod,
+                meetingLocation: agendasRakordir.meetingLocation,
+                meetingLink: agendasRakordir.meetingLink,
+            })
             .from(agendasRakordir)
             .where(eq(agendasRakordir.notulensiNumber, notulensiNumber))
             .limit(1);
 
-        const meetingYear = existingRows[0]?.meetingYear || new Date().getFullYear().toString();
+        const existing = existingRows[0];
+        const meetingYear = existing?.meetingYear || new Date().getFullYear().toString();
 
-        // Update each agenda with the notulensi number and shared data
+        // Update each agenda with the notulensi number, shared data, and meeting logistics
         for (const agendaId of agendaIds) {
             await db
                 .update(agendasRakordir)
                 .set({
                     notulensiNumber: notulensiNumber,
                     meetingYear: meetingYear,
+                    executionDate: existing?.executionDate ?? null,
+                    startTime: existing?.startTime ?? null,
+                    endTime: existing?.endTime ?? null,
+                    meetingMethod: existing?.meetingMethod ?? null,
+                    meetingLocation: existing?.meetingLocation ?? null,
+                    meetingLink: existing?.meetingLink ?? null,
                     pimpinanRapat: sharedData?.pimpinanRapat ?? [],
                     attendanceData: sharedData?.attendanceData ?? {},
                     guestParticipants: sharedData?.guestParticipants ?? [],
