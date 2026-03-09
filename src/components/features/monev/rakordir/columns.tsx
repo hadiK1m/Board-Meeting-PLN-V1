@@ -338,11 +338,67 @@ export const columns: ColumnDef<MonevRakordirItem>[] = [
     },
 ];
 
+// Safe filename: prevent path traversal and invalid chars; fallback to notulensi number
+function getSafeDownloadFilename(storagePath: string, notulensiNumber: string | null): string {
+    // Only use basename from path (no parent path) to prevent path injection
+    const basename = storagePath.replace(/^.*\//, "").trim() || "";
+    const sanitized = basename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    if (sanitized) return sanitized;
+    const safeNum = (notulensiNumber || "notulensi").replace(/[^a-zA-Z0-9-]/g, "_");
+    const ext = (storagePath.match(/\.([a-zA-Z0-9]+)$/)?.[1] || "pdf").toLowerCase();
+    return `Notulensi_${safeNum}.${ext}`;
+}
+
+// Validate storage path: no path traversal, only allowed chars
+function isAllowedStoragePath(path: string | null): boolean {
+    if (!path || typeof path !== "string") return false;
+    if (path.includes("..") || path.includes("\\")) return false;
+    if (!/^[\w./-]+$/.test(path)) return false;
+    return path.startsWith("rakordir/");
+}
+
 // Separate component to handle dialog state
 function ActionCell({ row }: { row: MonevRakordirItem }) {
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [downloadLoading, setDownloadLoading] = useState(false);
     const notulensiNumber = row.notulensiNumber;
     const notulensiUrl = `/dashboard/pelaksanaan-rapat/rakordir/input/${encodeURIComponent(notulensiNumber || "")}`;
+    const canDownload = Boolean(row.notulensiTtd && isAllowedStoragePath(row.notulensiTtd));
+
+    const handleDownloadNotulensi = async () => {
+        if (!canDownload || !row.notulensiTtd) return;
+
+        setDownloadLoading(true);
+        try {
+            const supabase = createClient();
+            const { data, error } = await supabase.storage
+                .from("Dokumen")
+                .createSignedUrl(row.notulensiTtd, 3600); // 1 hour expiry, no permanent exposure
+
+            if (error || !data?.signedUrl) {
+                console.error("Error creating signed URL:", error?.message ?? "No URL");
+                return;
+            }
+
+            const res = await fetch(data.signedUrl, { method: "GET" });
+            if (!res.ok) throw new Error("Gagal mengambil file");
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = getSafeDownloadFilename(row.notulensiTtd, row.notulensiNumber);
+            a.rel = "noopener noreferrer";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download notulensi error:", err);
+        } finally {
+            setDownloadLoading(false);
+        }
+    };
 
     return (
         <div className="py-3">
@@ -362,8 +418,15 @@ function ActionCell({ row }: { row: MonevRakordirItem }) {
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Lihat Notulensi
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => console.log("Download PDF")}>
-                        <Download className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem
+                        onClick={handleDownloadNotulensi}
+                        disabled={!canDownload || downloadLoading}
+                    >
+                        {downloadLoading ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                        )}
                         Unduh Notulensi
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
