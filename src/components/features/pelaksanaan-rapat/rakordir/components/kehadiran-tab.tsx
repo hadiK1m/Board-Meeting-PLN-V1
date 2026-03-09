@@ -30,6 +30,7 @@ export type AttendanceStatus = "hadir" | "tidak_hadir";
 export interface DirectorAttendance {
     status: AttendanceStatus;
     keterangan?: string; // Reason for tidak hadir
+    kuasaTo?: string; // Nama yang mewakili (jika status kuasa)
 }
 
 export interface GuestParticipant {
