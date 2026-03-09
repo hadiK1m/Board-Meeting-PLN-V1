@@ -237,7 +237,7 @@ export const columns: ColumnDef<MonevRakordirItem>[] = [
         id: "notulensiTtd",
         header: () => (
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Notulensi TTD
+                Notulensi
             </span>
         ),
         size: 160,
