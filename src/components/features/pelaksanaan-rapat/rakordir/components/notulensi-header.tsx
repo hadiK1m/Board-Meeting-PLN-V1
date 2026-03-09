@@ -3,7 +3,7 @@
 
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ArrowLeft, Save, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle2, Loader2, FileDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +14,11 @@ interface NotulensiHeaderProps {
     agendaCount: number;
     isSaving: boolean;
     isFinalizing: boolean;
+    isDownloading?: boolean;
     onBack: () => void;
     onSave: () => void;
     onFinalize: () => void;
+    onDownloadDoc?: () => void;
 }
 
 export function NotulensiHeader({
@@ -25,9 +27,11 @@ export function NotulensiHeader({
     agendaCount,
     isSaving,
     isFinalizing,
+    isDownloading,
     onBack,
     onSave,
     onFinalize,
+    onDownloadDoc,
 }: NotulensiHeaderProps) {
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return "-";
@@ -65,6 +69,15 @@ export function NotulensiHeader({
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={onDownloadDoc}
+                        disabled={isDownloading || !onDownloadDoc}
+                        className="min-w-35"
+                    >
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                        Download Dokument Notulensi
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={onSave}

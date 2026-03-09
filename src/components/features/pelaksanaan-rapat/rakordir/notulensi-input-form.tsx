@@ -8,6 +8,7 @@ import { Users, FileText, MessageSquare, FolderOpen } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { showNotify } from "@/components/shared/toast-provider";
 import { updateNotulensiAction, finalizeNotulensiAction, removeAgendaFromNotulensiAction } from "@/server/actions/pelaksanaan-rakordir-actions";
+import { exportNotulensiToDocx, type ExportNotulensiData } from "@/lib/export-notulensi-rakordir";
 
 import {
     NotulensiHeader,
@@ -73,6 +74,7 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [isFinalizing, setIsFinalizing] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
     const [localAgendas, setLocalAgendas] = useState(initialData.agendas);
 
@@ -276,6 +278,47 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
         }
     };
 
+    const handleDownloadDoc = async () => {
+        setIsDownloading(true);
+        try {
+            const attendance = directorOptions.map((dir) => {
+                const att = attendanceData[dir.label];
+                return {
+                    name: dir.label,
+                    status: att?.status ?? "hadir",
+                    kuasaTo: att?.kuasaTo,
+                };
+            });
+            const exportData: ExportNotulensiData = {
+                notulensiNumber: initialData.notulensiNumber,
+                meetingYear: initialData.meetingYear,
+                executionDate: initialData.executionDate,
+                startTime: initialData.startTime,
+                endTime: initialData.endTime,
+                meetingMethod: initialData.meetingMethod,
+                meetingLocation: initialData.meetingLocation,
+                meetingLink: initialData.meetingLink,
+                pimpinanRapat,
+                attendance,
+                guestParticipants,
+                agendas: localAgendas.map((agenda) => ({
+                    title: agenda.title,
+                    director: agenda.director,
+                    initiator: agenda.initiator,
+                    executiveSummary: perAgendaContent[agenda.id]?.executiveSummary ?? "",
+                    arahanDireksi: perAgendaContent[agenda.id]?.arahanDireksi ?? [],
+                })),
+            };
+            await exportNotulensiToDocx(exportData);
+            showNotify("Dokumen notulensi berhasil diunduh!", "success");
+        } catch (error) {
+            console.error("Download notulensi error:", error);
+            showNotify("Gagal mengunduh dokumen notulensi. Pastikan template ada di public.", "error");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     const addGuest = () => {
         if (newGuest.trim()) {
             setGuestParticipants([...guestParticipants, { name: newGuest.trim(), jabatan: newGuestJabatan.trim() }]);
@@ -347,9 +390,11 @@ export function NotulensiInputForm({ initialData, directorOptions }: NotulensiIn
                 agendaCount={localAgendas.length}
                 isSaving={isSaving}
                 isFinalizing={isFinalizing}
+                isDownloading={isDownloading}
                 onBack={() => router.back()}
                 onSave={handleSave}
                 onFinalize={handleFinalize}
+                onDownloadDoc={handleDownloadDoc}
             />
 
             {/* Main Content - Two Column Layout */}
