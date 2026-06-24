@@ -13,6 +13,8 @@ import { ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { columns } from "./columns";
 import { DeleteRakordirDialog } from "./delete-rakordir-dialog";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 interface AgendaMainProps {
     initialData: AgendaRadirItem[];
@@ -37,6 +39,51 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
         const ids = selectedRows.map((row) => row.original.id);
         if (ids.length > 0) { setDeleteIds(ids); setShowDeleteDialog(true); }
     };
+
+    const handleExportCsv = () => {
+        const selectedRows = table.getFilteredSelectedRowModel().rows;
+        if (selectedRows.length === 0) return;
+
+        const headers = ["No", "Judul Agenda", "Prioritas", "Deadline", "Direktur Pemrakarsa", "Status"];
+        
+        const rows = selectedRows.map((row, index) => {
+            const original = row.original;
+            const deadline = original.deadlineDate ? format(new Date(original.deadlineDate), "dd MMM yyyy", { locale: id }) : "-";
+            
+            // Calculate priority
+            let priority = "-";
+            if (original.deadlineDate) {
+                const today = new Date();
+                const deadlineDate = new Date(original.deadlineDate);
+                const daysLeft = Math.floor((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysLeft < 0) priority = "-";
+                else if (daysLeft <= 7) priority = "High";
+                else if (daysLeft <= 14) priority = "Medium";
+                else priority = "Low";
+            }
+
+            return [
+                index + 1,
+                `"${(original.title || "").replace(/"/g, '""')}"`,
+                priority,
+                deadline,
+                original.director || "-",
+                original.status || "-"
+            ].join(",");
+        });
+
+        const csvContent = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `rakordir_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="flex flex-col h-full space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -51,6 +98,7 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
                         onReset={() => table.resetColumnFilters()}
                         selectedCount={table.getFilteredSelectedRowModel().rows.length}
                         onDeleteBulk={handleBulkDelete}
+                        onExportCsv={handleExportCsv}
                     />
                 </div>
                 <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 border border-slate-200 h-fit">

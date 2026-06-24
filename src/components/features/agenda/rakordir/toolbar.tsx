@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Calendar as CalendarIcon, Filter, Trash2 } from "lucide-react";
+import { Search, X, Calendar as CalendarIcon, Filter, Trash2, Download } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,9 +20,10 @@ interface AgendaToolbarProps {
     onReset: () => void;
     selectedCount?: number;
     onDeleteBulk?: () => void;
+    onExportCsv?: () => void;
 }
 
-export function AgendaToolbar({ searchQuery, onSearchChange, statusFilter, onStatusChange, dateFilter, onDateChange, selectedCount = 0, onDeleteBulk }: AgendaToolbarProps) {
+export function AgendaToolbar({ searchQuery, onSearchChange, statusFilter, onStatusChange, dateFilter, onDateChange, selectedCount = 0, onDeleteBulk, onExportCsv }: AgendaToolbarProps) {
     const statuses = ["Draft", "Dapat Dilanjutkan", "Dijadwalkan", "Ditunda", "Dibatalkan", "Selesai"];
     const toggleStatus = (status: string) => {
         if (statusFilter.includes(status)) onStatusChange(statusFilter.filter((s) => s !== status));
@@ -40,6 +41,11 @@ export function AgendaToolbar({ searchQuery, onSearchChange, statusFilter, onSta
                 {selectedCount > 0 && onDeleteBulk && (
                     <Button variant="destructive" size="sm" className="h-9 px-3 animate-in fade-in slide-in-from-left-5 font-bold shadow-sm" onClick={onDeleteBulk}>
                         <Trash2 className="h-4 w-4 mr-2" /> Hapus ({selectedCount})
+                    </Button>
+                )}
+                {selectedCount > 0 && onExportCsv && (
+                    <Button variant="outline" size="sm" className="h-9 px-3 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 font-bold shadow-sm" onClick={onExportCsv}>
+                        <Download className="h-4 w-4 mr-2" /> Export CSV ({selectedCount})
                     </Button>
                 )}
                 <DropdownMenu>
