@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ColumnFiltersState, SortingState, VisibilityState, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { AgendaRadirItem } from "@/types/agenda";
 import { AgendaToolbar } from "./toolbar";
-import { AgendaGrid } from "../radir/agenda-grid"; // ✅ Reuse Grid dari RADIR
+import { AgendaGrid } from "../radir/agenda-grid";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
@@ -15,6 +15,7 @@ import { columns } from "./columns";
 import { DeleteRakordirDialog } from "./delete-rakordir-dialog";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import * as XLSX from "xlsx";
 
 interface AgendaMainProps {
     initialData: AgendaRadirItem[];
@@ -45,12 +46,11 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
         if (selectedRows.length === 0) return;
 
         const headers = ["No", "Judul Agenda", "Prioritas", "Deadline", "Direktur Pemrakarsa", "Status"];
-        
+
         const rows = selectedRows.map((row, index) => {
             const original = row.original;
             const deadline = original.deadlineDate ? format(new Date(original.deadlineDate), "dd MMM yyyy", { locale: id }) : "-";
-            
-            // Calculate priority
+
             let priority = "-";
             if (original.deadlineDate) {
                 const today = new Date();
@@ -84,6 +84,94 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
         URL.revokeObjectURL(url);
     };
 
+    const handleExportExcel = () => {
+        const selectedRows = table.getFilteredSelectedRowModel().rows;
+        if (selectedRows.length === 0) return;
+
+        const headers = ["No", "Judul Agenda", "Prioritas", "Deadline", "Direktur Pemrakarsa", "Status"];
+
+        const data = selectedRows.map((row, index) => {
+            const original = row.original;
+            const deadline = original.deadlineDate ? format(new Date(original.deadlineDate), "dd MMM yyyy", { locale: id }) : "-";
+
+            let priority = "-";
+            if (original.deadlineDate) {
+                const today = new Date();
+                const deadlineDate = new Date(original.deadlineDate);
+                const daysLeft = Math.floor((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                if (daysLeft < 0) priority = "-";
+                else if (daysLeft <= 7) priority = "High";
+                else if (daysLeft <= 14) priority = "Medium";
+                else priority = "Low";
+            }
+
+            return [
+                index + 1,
+                original.title || "",
+                priority,
+                deadline,
+                original.director || "-",
+                original.status || "-"
+            ];
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+        const colWidths = [
+            { wch: 5 },
+            { wch: 50 },
+            { wch: 12 },
+            { wch: 15 },
+            { wch: 25 },
+            { wch: 20 }
+        ];
+        ws['!cols'] = colWidths;
+
+        const headerStyle = {
+            fill: { fgColor: { rgb: "006070" } },
+            font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            }
+        };
+
+        for (let col = 0; col < headers.length; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+            if (!ws[cellAddress]) ws[cellAddress] = { t: 's', v: headers[col] };
+            ws[cellAddress].s = headerStyle;
+        }
+
+        for (let row = 1; row < data.length + 1; row++) {
+            for (let col = 0; col < headers.length; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                if (ws[cellAddress]) {
+                    ws[cellAddress].s = {
+                        border: {
+                            top: { style: "thin", color: { rgb: "DDDDDD" } },
+                            bottom: { style: "thin", color: { rgb: "DDDDDD" } },
+                            left: { style: "thin", color: { rgb: "DDDDDD" } },
+                            right: { style: "thin", color: { rgb: "DDDDDD" } }
+                        },
+                        alignment: { horizontal: col === 1 ? "left" : "center", vertical: "center" },
+                        font: { sz: 11 }
+                    };
+                    if (row % 2 === 0) {
+                        ws[cellAddress].s.fill = { fgColor: { rgb: "F5F5F5" } };
+                    }
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Rakordir");
+        const fileName = `rakordir_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    };
+
     return (
         <div className="flex flex-col h-full space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -99,6 +187,7 @@ export function AgendaMain({ initialData }: AgendaMainProps) {
                         selectedCount={table.getFilteredSelectedRowModel().rows.length}
                         onDeleteBulk={handleBulkDelete}
                         onExportCsv={handleExportCsv}
+                        onExportExcel={handleExportExcel}
                     />
                 </div>
                 <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 border border-slate-200 h-fit">
